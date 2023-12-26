@@ -5,7 +5,6 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,25 +52,6 @@ fun MainScreen(
         var drage by remember {
             mutableStateOf(Offset.Zero)
         }
-        var trigger by remember {
-            mutableStateOf(false)
-        }
-
-        LaunchedEffect(tappedPosition) {
-            cells.flatten().forEach { cell ->
-                if (tappedPosition != Offset.Zero) {
-                    val dx = cell.x - tappedPosition.x
-                    val dy = cell.y - tappedPosition.y
-                    val distance = hypot(dx, dy)
-                    if (distance < distanceAroundTap) {
-                        val ratio = distance / distanceAroundTap
-                        cell.scaleX += if (drage.x > 0f) -ratio else ratio
-                        cell.scaleY += if (drage.y > 0f) -ratio else ratio
-                    }
-                }
-            }
-            trigger = trigger.not()
-        }
 
         Canvas(
             modifier = Modifier
@@ -83,7 +63,7 @@ fun MainScreen(
                         onDragEnd = {
                             tappedPosition = Offset.Zero
                         }
-                    ) { change, dragAmount ->
+                    ) { _, dragAmount ->
                         drage = dragAmount
                         tappedPosition += dragAmount
                         println(dragAmount)
@@ -91,23 +71,30 @@ fun MainScreen(
                 }
                 .fillMaxSize()
         ) {
-            trigger
-            cells.forEachIndexed { index, columns ->
-                columns.forEach { cell ->
-                    drawImage(
-                        image = imageBitmap,
-                        srcOffset = IntOffset(
-                            x = (cell.x + cell.scaleX).toInt(),
-                            y = (cell.y + cell.scaleY).toInt()
-                        ),
-                        srcSize = IntSize(width = cellWith, height = cellHeight),
-                        dstOffset = IntOffset(
-                            x = (cell.x),
-                            y = (cell.y)
-                        ),
-                        dstSize = IntSize(width = cellWith, height = cellHeight),
-                    )
+            cells.flatten().forEach { cell ->
+                if (tappedPosition != Offset.Zero) {
+                    val dx = cell.x - tappedPosition.x
+                    val dy = cell.y - tappedPosition.y
+                    val distance = hypot(dx, dy)
+                    if (distance < distanceAroundTap) {
+                        val ratio = distance / distanceAroundTap
+                        cell.scaleX += if (drage.x > 0f) -ratio else ratio
+                        cell.scaleY += if (drage.y > 0f) -ratio else ratio
+                    }
                 }
+                drawImage(
+                    image = imageBitmap,
+                    srcOffset = IntOffset(
+                        x = (cell.x + cell.scaleX).toInt(),
+                        y = (cell.y + cell.scaleY).toInt()
+                    ),
+                    srcSize = IntSize(width = cellWith, height = cellHeight),
+                    dstOffset = IntOffset(
+                        x = (cell.x),
+                        y = (cell.y)
+                    ),
+                    dstSize = IntSize(width = cellWith, height = cellHeight),
+                )
             }
         }
     }
